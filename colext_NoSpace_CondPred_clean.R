@@ -20,12 +20,12 @@ library(plyr)
 ##################################################################################################
 # SET DIRECTORIES AND READ THE FITTED MODEL
 ##################################################################################################
-setwd("F:/HelsinkiData23102019/archipelago/hmsc/Rcode/colext_nospace")
+setwd("D:/HelsinkiData23102019/archipelago/hmsc/Rcode/colext_nospace")
 load("model.RData")
 
-Y = as.matrix(read.csv("F:/HelsinkiData23102019/archipelago/hmsc/data/oldnewY.csv"))
-Y=Y[472:942,]
-Y=Y[,order(colnames(Y))]
+Y = as.matrix(read.csv("D:/HelsinkiData23102019/archipelago/hmsc/Rcode/repeatedmeasures/Y.csv"))
+Y = Y[472:942,]
+Y = Y[,order(colnames(Y))]
 
 #### - Conditional predictions - ####
 predList = list()
@@ -34,8 +34,8 @@ cpredList = list()
 epredList = list()
 tjurMat = matrix(NA, nrow=585, ncol=12)
 
-post = poolMcmcChains(m$postList, thin=10)
-mcmc = 10
+post = poolMcmcChains(m$postList, thin=500)
+mcmc = 1
 
 a = Sys.time()
 for(i in 1:1){
@@ -185,15 +185,13 @@ b-a
 #5 species thin 10 mcmc 10 = 14.15 hours, 2.83 hours per species
 
 save(predList, file="cond_preds/predList.RData")
-
 save(tjurMat, file="cond_preds/tjurMat.RData")
 
 load(file="predList.RData")
 
-#Combine from remote computer
-list.files()
+# Import and combine predictions
 load(file = "cond_preds/predList1-100.RData")
-pred1_100 = predList
+pred001_100 = predList
 load(file = "cond_preds/predList101-200.RData")
 pred101_200 = predList
 load(file = "cond_preds/predList201-300.RData")
@@ -205,14 +203,14 @@ pred401_500 = predList
 load(file = "cond_preds/predList501-585.RData")
 pred501_585 = predList
 
-pred1_100 = lapply(c(1:100), function(x){pred1_100[[x]]})
+pred001_100 = lapply(c(1:100), function(x){pred001_100[[x]]})
 pred101_200 = lapply(c(101:200), function(x){pred101_200[[x]]})
 pred201_300 = lapply(c(201:300), function(x){pred201_300[[x]]})
 pred301_400 = lapply(c(301:400), function(x){pred301_400[[x]]})
 pred401_500 = lapply(c(401:500), function(x){pred401_500[[x]]})
 pred501_585 = lapply(c(501:585), function(x){pred501_585[[x]]})
 
-predList=c(pred1_100, pred101_200, pred201_300, pred301_400, pred401_500, pred501_585)
+predList = c(pred001_100, pred101_200, pred201_300, pred301_400, pred401_500, pred501_585)
 length(predList)
 
 # RMSD
@@ -235,24 +233,25 @@ out2 = lapply(out, as.data.frame)
 vals = rbind.fill(out2)
 vals = vals[,1]
 mat = matrix(vals, nrow=11, ncol=length(predList), byrow=F)
-means = apply(mat,1,mean)
-ses = apply(mat,1,sd)
+means = apply(mat, 1, mean)
+ses = apply(mat, 1, sd)
 
-#rmsd
-plot(1:11,means,ylim=c(-0.01,0.04),pch=c(1,16,17,15,16,17,15,17,15,17,15),
-     xaxt="n",ylab="Root mean square deviation",xlab="",main=expression(paste("(b) Influence on model predictions")))
-segments(1:11,means-ses,1:11,means+ses)
-abline(h=0,lty=2)
-axis(1,c(1,3,6,8.5,10.5),labels=F,xlab="")
-text(c(1,3,6,8.5,10.5),par("usr")[3]-.003,srt=45,adj=1,labels=c("Full model", "Environment","Historical occurrence", "Colonisation", "Extinction"),xpd=T)
+# rmsd
+plot(1:11, means, ylim=c(-0.01,0.04), pch=c(1,16,17,15,16,17,15,17,15,17,15),
+     xaxt="n", ylab="Root mean square deviation", xlab="", main=expression(paste("(b) Influence on model predictions")))
+segments(1:11, means-ses, 1:11, means+ses)
+abline(h=0, lty=2)
+axis(1, c(1,3,6,8.5,10.5), labels=F, xlab="")
+text(c(1,3,6,8.5,10.5), par("usr")[3]-.003, srt=45, adj=1, 
+     labels=c("Full model", "Environment","Historical occurrence", "Colonisation", "Extinction"), xpd=T)
 
-abline(v=1.5,lty=2)
-abline(v=4.5,lty=2)
-abline(v=7.5,lty=2)
-abline(v=9.5,lty=2)
-legend("topright",pch=c(1,16,17,15),c("Full model", "Historical occurrence", "Colonisation", "Extinction"),bg="white")
+abline(v=1.5, lty=2)
+abline(v=4.5, lty=2)
+abline(v=7.5, lty=2)
+abline(v=9.5, lty=2)
+legend("topright", pch=c(1,16,17,15), c("Full model", "Historical occurrence", "Colonisation", "Extinction"), bg="white")
 
-# Tjur####
+# Tjur
 tjur = function(x){
 tval = NULL
 for(i in 2:12){
@@ -261,27 +260,27 @@ tval[i-1] = mean(x[which(x[,13]==1),i])-mean(x[which(x[,13]==0),i])
 return(tval)
 }
 
-out = lapply(predList,function(xx){tjur(xx)})
-out2 = lapply(out,as.data.frame)
+out = lapply(predList, function(xx){tjur(xx)})
+out2 = lapply(out, as.data.frame)
 vals = rbind.fill(out2)
 vals = vals[,1]
 
-mat = matrix(vals,nrow=11,ncol=length(predList),byrow=F)
-means = apply(mat,1,mean,na.rm=T)
-ses = apply(mat,1,sd,na.rm=T)/sqrt(ncol(mat))
+mat = matrix(vals, nrow=11, ncol=length(predList), byrow=F)
+means = apply(mat, 1, mean, na.rm=T)
+ses = apply(mat, 1, sd, na.rm=T)/sqrt(ncol(mat))
 
-plot(1:11,means,ylim=c(0.2,.35),xlab="",xaxt="n",pch=c(1,16,17,15,16,17,15,17,15,17,15),las=1,
-     main=expression(paste("(c) Influence on Tjur ",r^2)),ylab=expression(paste("Tjur ",r^2)))
+plot(1:11, means, ylim=c(0.2,.35), xlab="", xaxt="n", pch=c(1,16,17,15,16,17,15,17,15,17,15), las=1,
+     main=expression(paste("(c) Influence on Tjur ", r^2)), ylab=expression(paste("Tjur ",r^2)))
 abline(h=means[1])
-segments(1:11,means-ses,1:11,means+ses)
-axis(1,c(1,3,6,8.5,10.5),labels=F,xlab="")
-text(c(1,3,6,8.5,10.5),par("usr")[3]-.007,srt=45,adj=1,labels=c("Full model", "Environment","Historical occurrence", "Colonisation", "Extinction"),xpd=T)
+segments(1:11, means-ses, 1:11, means+ses)
+axis(1, c(1,3,6,8.5,10.5), labels=F, xlab="")
+text(c(1,3,6,8.5,10.5), par("usr")[3]-.007, srt=45, adj=1,
+     labels=c("Full model", "Environment","Historical occurrence", "Colonisation", "Extinction"), xpd=T)
 
-abline(v=1.5,lty=2)
-abline(v=4.5,lty=2)
-abline(v=7.5,lty=2)
-abline(v=9.5,lty=2)
-legend("topright",pch=c(1,16,17,15),c("Full model", "Historical occurrence", "Colonisation", "Extinction"),bg="white")
+abline(v=1.5, lty=2)
+abline(v=4.5, lty=2)
+abline(v=7.5, lty=2)
+abline(v=9.5, lty=2)
+legend("topright", pch=c(1,16,17,15), c("Full model", "Historical occurrence", "Colonisation", "Extinction"), bg="white")
 
 dev.off()
-

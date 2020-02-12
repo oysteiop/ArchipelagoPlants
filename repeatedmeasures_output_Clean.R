@@ -13,15 +13,15 @@ library(BayesLogit)
 library(Hmsc)
 #library(abind)
 #library(corrplot)
-#library(ggplot2)
-library(parallel)
+library(ggplot2)
+library(ggsn)
 
 #### - Load the fitted model - ####
-setwd("F:/HelsinkiData23102019/archipelago/hmsc/Rcode/repeatedmeasures")
+setwd("D:/HelsinkiData23102019/archipelago/hmsc/Rcode/repeatedmeasures")
 load("modelNS.RData")
 
 # Extract posterior distribution
-post=convertToCodaObject(m)
+post = convertToCodaObject(m)
 
 # Compute effective sample sizes and PSRFs
 esBeta = effectiveSize(post$Beta)
@@ -89,29 +89,30 @@ load(file="MF.RData")
 AUC = MF$AUC
 R2 = MF$TjurR2
 
-mean(R2,na.rm=T) #0.30
-range(R2,na.rm=T) #0 - 0.71
-mean(AUC,na.rm=T) #0.94
-range(AUC,na.rm=T) #0.74 - 1.00
+mean(R2, na.rm=T) #0.30
+range(R2, na.rm=T) #0 - 0.71
+mean(AUC, na.rm=T) #0.94
+range(AUC, na.rm=T) #0.74 - 1.00
 
 # Plot Tjur r^2 vs species prevalence
-prev=colSums(m$Y)/(m$ny)
+prev = colSums(m$Y)/(m$ny)
 
 pdf("plots/tjur_vs_prev.pdf", height=4, width=4, family="Times")
-par(mfrow=c(1,1),mar=c(4,5,2,1))
-plot(prev,MF$TjurR2,las=1,pch=16,col="grey",cex=.8,main=paste("Repeated measures model: Mean = ",signif(mean(MF$TjurR2,na.rm=T),2),".", sep=""),ylim = c(0,1),xlab = "",ylab=expression(paste("Coefficient of discrimination (Tjur's",r^2,")")))
-mtext("Species prevalence",1,line=2.5)
+par(mfrow=c(1,1), mar=c(4,5,2,1))
+plot(prev, MF$TjurR2, las=1, pch=16, col="grey", cex=.8, main=paste("Repeated measures model: Mean = ", signif(mean(MF$TjurR2, na.rm=T), 2),".", sep=""),
+     ylim = c(0,1), xlab = "", ylab=expression(paste("Coefficient of discrimination (Tjur's", r^2,")")))
+mtext("Species prevalence", 1, line=2.5)
 dev.off()
 
 # Explanatory power at island level
 load(file="predYm.RData")
 
-plot(rowSums(m$Y),rowSums(predYm)) #Species richness per island per sampling time
-round(cor(rowSums(m$Y),rowSums(predYm))^2,2)
+plot(rowSums(m$Y), rowSums(predYm)) #Species richness per island per sampling time
+round(cor(rowSums(m$Y), rowSums(predYm))^2, 2)
 #full: 1.00
 
-plot(colSums(m$Y),colSums(predYm)) #Occurrences per species
-round(cor(colSums(m$Y),colSums(predYm))^2,2)
+plot(colSums(m$Y), colSums(predYm)) #Occurrences per species
+round(cor(colSums(m$Y), colSums(predYm))^2, 2)
 #full: 1.0
 
 #### - Compute and plot variance partitioning - ####
@@ -120,7 +121,7 @@ group = c(1,1,2,3,4)
 groupnames = c(m$covNames[-1])
 groupnames
 
-VP = computeVariancePartitioning(m, group = group, groupnames = groupnames)
+VP = computeVariancePartitioning(m, group=group, groupnames=groupnames)
 #save(VP, file="VP.RData")
 
 load(file="VP.RData")
@@ -128,7 +129,7 @@ load(file="VP.RData")
 str(VP) #Trait r^2 = 9.5%
 
 pdf("plots/varpart.pdf", height=5, width=60)
-plotVariancePartitioning(m, VP = VP)
+plotVariancePartitioning(m, VP=VP)
 dev.off()
 
 # Trait effects
@@ -146,20 +147,22 @@ load(file="OmegaCor.RData")
 pdf("plots/rmCor.pdf",width=4,height=4)
 supportLevel = 0.75
 for (r in 1:m$nr){
-  plotOrder = corrMatOrder(OmegaCor[[r]]$mean,order="AOE")
+  plotOrder = corrMatOrder(OmegaCor[[r]]$mean, order="AOE")
   toPlot = ((OmegaCor[[r]]$support>supportLevel) + (OmegaCor[[r]]$support<(1-supportLevel))>0)*OmegaCor[[r]]$mean
-  corrplot(toPlot[plotOrder,plotOrder], type="lower",tl.pos="n",method = "color", col=colorRampPalette(c("blue","white","red"))(200),title=paste("random effect level:",m$levelNames[r]), mar=c(0,0,1,0))
+  corrplot(toPlot[plotOrder,plotOrder], type="lower", tl.pos="n", method = "color", col=colorRampPalette(c("blue","white","red"))(200), title=paste("random effect level:", m$levelNames[r]), mar=c(0,0,1,0))
 }
 dev.off()
 
 #### - Plot map of change in species richness - ####
 load(file="predYm.RData")
+xy = as.matrix(read.csv("xy.csv"))
 
-S=rowSums(predYm)
+S = rowSums(predYm)
 predT = (predYm%*%m$Tr)/matrix(rep(S,m$nt),ncol=m$nt)
 RCP = kmeans(predYm, 5)
 RCP$cluster = as.factor(RCP$cluster)
-mapData=data.frame(m$rL[[1]]$s,S,predT,RCP$cluster)
+
+mapData = data.frame(xy, S, predT, RCP$cluster)
 head(mapData)
 
 obsdelta=NULL
@@ -171,53 +174,44 @@ delta=NULL
 for(i in 1:471){
   delta[i]=log(S[i+471])-log(S[i])
   #delta[i]=(S[i+471]-S[i])/S[i]
-  
-}
+ }
+
+#write.csv2(delta*100, file="C:/data/deltavals_02_2020.csv")
 
 hist(delta)
 mean(delta)
 
-mapData$delta=delta
+mapData$delta = delta
 mean(S[1:471])
 mean(S[472:942])
 mean(S[472:942])-mean(S[1:471]) #Change in species richness between inventories
 
 # PLOT PREDICTED SPECIES RICHNESS
-sp <- ggplot(data = mapData, aes(x=X_manif, y=Y_manif, color=S))+geom_point(size=3)
+sp <- ggplot(data = mapData, aes(x=X_manif, y=Y_manif, color=S)) + geom_point(size=3)
 sp + ggtitle("Predicted species richness") + scale_color_gradient(low="blue", high="red")
 
 # PLOT PREDICTED DELTA SPECIES RICHNESS
-#ENVIRONMENTAL COVARIATES
-X = as.matrix(read.csv("Z:/data/archipelago/hmsc/data/X.csv"))
-X=X[1:471,-c(1,3)]
-X=data.frame(rbind(X,X))
-head(X)
 
-dim(X)
-dim(mapData)
-
-library(ggsn)
-mapData$long=mapData$X_manif
-mapData$lat=mapData$Y_manif
+mapData$long = mapData$X_manif
+mapData$lat = mapData$Y_manif
 
 pdf("plots/delta_map.pdf",width=6,height=5,family="Times")
-sp <- ggplot(data = mapData, aes(x=X_manif, y=Y_manif, color=delta*100))+geom_point(alpha=.7,size=3*sqrt(X$area)/200) + scalebar(mapData,location="bottomleft", dist=10,dd2km=NULL,model="WGS84",st.size=4) +north(mapData, symbol=1)
-sp + ggtitle("Percent change in species richness between inventories") + scale_colour_gradient2(low="blue",mid="lightgrey",high="red", name="Delta SR")+theme_bw() + xlab("") + ylab("")
+sp <- ggplot(data = mapData, aes(x=X_manif, y=Y_manif, color=delta*100)) + geom_point(alpha=.7, size=3*sqrt(m$XData$area)/200) + scalebar(mapData, location="bottomleft", dist=10, dd2km=NULL, model="WGS84", st.size=4) +north(mapData, symbol=1)
+sp + ggtitle("Percent change in species richness between inventories") + scale_colour_gradient2(low="blue", mid="lightgrey", high="red", name="Delta SR")+theme_bw() + xlab("") + ylab("")
 dev.off()
 
 #PLOT PREDICTED REGIONS OF COMMON PROFILE
-sp <- ggplot(data = mapData, aes(x=X_manif, y=Y_manif, color=RCP.cluster))+geom_point(size=3)
+sp <- ggplot(data = mapData, aes(x=X_manif, y=Y_manif, color=RCP.cluster)) + geom_point(size=3)
 sp + ggtitle("Regions of common profile") 
 
 #### - Cross-validation - ####
-a=Sys.time()
-partition=createPartition(m, nfolds=4, column=1)
-predY_CV4 = computePredictedValues(m, partition=partition, nParallel = 2, updater=list(GammaEta=FALSE))
-MF_CV4=evaluateModelFit(m, predY_CV4)
+a = Sys.time()
+partition = createPartition(m, nfolds=2, column=1)
+predY_CV2 = computePredictedValues(m, partition=partition, nParallel = 2, updater=list(GammaEta=FALSE))
+MF_CV2 = evaluateModelFit(m, predY_CV2)
 Sys.time()-a
 
 #save(MF_CV2,file="MF_CV2.Rdata") #2fold
-save(MF_CV4,file="MF_CV4.Rdata") #4fold
 
 predYm_CV = apply(simplify2array(predY_CV2), 1:2, mean) #Posterior mean
 #save(predYm_CV, file="predYm_CV.RData")
@@ -232,18 +226,17 @@ load(file="MF_CV2.Rdata") #2fold
 R2 = MF_CV2$TjurR2
 AUC = MF_CV2$AUC
 
-mean(R2,na.rm=T)
-mean(AUC,na.rm=T)
-
+mean(R2, na.rm=T)
+mean(AUC, na.rm=T)
 
 load(file="predYm_CV.RData")
 
-plot(rowSums(m$Y),rowSums(predYm_CV)) #Species richness per island per sampling time
-round(cor(rowSums(m$Y),rowSums(predYm_CV))^2,2)
+plot(rowSums(m$Y), rowSums(predYm_CV)) #Species richness per island per sampling time
+round(cor(rowSums(m$Y), rowSums(predYm_CV))^2, 2)
 #full: 1.00
 #2fold = 0.53
 
-plot(colSums(m$Y),colSums(predYm_CV)) #Occurrences per species
-round(cor(colSums(m$Y),colSums(predYm_CV))^2,2)
+plot(colSums(m$Y), colSums(predYm_CV)) #Occurrences per species
+round(cor(colSums(m$Y), colSums(predYm_CV))^2, 2)
 #full: 1.0
 #2fold = 1.0

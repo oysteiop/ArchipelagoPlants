@@ -22,7 +22,7 @@ setwd("F:/HelsinkiData23102019/archipelago/hmsc/Rcode/histocc")
 load("modelNS.RData")
 
 # Extract posterior distribution
-post=convertToCodaObject(m)
+post = convertToCodaObject(m)
 
 # Compute effective sample sizes and PSRFs
 esBeta = effectiveSize(post$Beta)
@@ -60,7 +60,7 @@ summary(mixing[[9]]) # Gamma
 summary(mixing[[10]]) # Rho
 summary(mixing[[14]]) # Omega
 
-#Produce posterior trace plots
+# Produce posterior trace plots
 plot(post$Rho)
 summary(post$Rho[[1]])
 
@@ -77,17 +77,17 @@ plot(post$Omega[[1]][,1:200])
 dev.off()
 
 # Trait effects Gamma
-postGamma=getPostEstimate(m, "Gamma")
+postGamma = getPostEstimate(m, "Gamma")
 postGamma
 plotGamma(m, post=postGamma, "Mean")
 
 #### - Evaluate model fit - ####
 #load("CrossVal5PredY.RData")
 predY = computePredictedValues(m)
-predYm=apply(simplify2array(predY), 1:2, mean) #Posterior mean
+predYm = apply(simplify2array(predY), 1:2, mean) #Posterior mean
 #save(predYm, file="predYm.RData")
 
-MF=evaluateModelFit(m, predY)
+MF = evaluateModelFit(m, predY)
 #save(MF, file="MF.RData")
 
 load(file="MF.RData")
@@ -95,27 +95,28 @@ load(file="MF.RData")
 AUC = MF$AUC
 R2 = MF$TjurR2
 
-mean(R2,na.rm=T) #0.29
-range(R2,na.rm=T) #0 - 0.72
-mean(AUC,na.rm=T) #0.92
-range(AUC,na.rm=T) #.70 - 1.00
+mean(R2, na.rm=T) #0.29
+range(R2, na.rm=T) #0 - 0.72
+mean(AUC, na.rm=T) #0.92
+range(AUC, na.rm=T) #.70 - 1.00
 
 # Explanatory power at island level
 load(file="predYm.RData")
 
-tmp=(m$Y>(-Inf))*1
-predYm2=predYm*tmp
+tmp = (m$Y>(-Inf))*1
+predYm2 = predYm*tmp
 plot(rowSums(m$Y, na.rm=T), rowSums(predYm2, na.rm=T))
-lines(0:100,0:100)
+lines(0:100, 0:100)
 cor(rowSums(m$Y, na.rm=T), rowSums(predYm2, na.rm=T))^2
 
 # Plot Tjur r^2 vs species prevalence
-prev=colSums(m$Y)/(m$ny)
+prev = colSums(m$Y)/(m$ny)
 
 pdf("tjur_vs_prev.pdf", height=4, width=4, family="Times")
-par(mfrow=c(1,1),mar=c(4,5,2,1))
-plot(prev,R2,las=1,pch=16,col="grey",cex=.8,main=paste("Repeated measures model: Mean = ",signif(mean(R2,na.rm=T),2),".", sep=""),ylim = c(0,1),xlab = "",ylab=expression(paste("Coefficient of discrimination (Tjur's",r^2,")")))
-mtext("Species prevalence",1,line=2.5)
+par(mfrow=c(1,1), mar=c(4,5,2,1))
+plot(prev, R2, las=1, pch=16, col="grey", cex=.8, main=paste("Repeated measures model: Mean = ", signif(mean(R2, na.rm=T),2),".", sep=""),
+     ylim = c(0,1), xlab = "", ylab=expression(paste("Coefficient of discrimination (Tjur's", r^2,")")))
+mtext("Species prevalence", 1, line=2.5)
 dev.off()
 
 #### - Compute and plot variance partitioning - ####
@@ -123,15 +124,15 @@ m$covNames
 group = c(1,1,2,3)
 groupnames = c(m$covNames[-1])
 groupnames
-VP = computeVariancePartitioning(m, group = group,groupnames = groupnames)
+VP = computeVariancePartitioning(m, group=group, groupnames=groupnames)
 #save(VP, file="VP.RData")
 
 load(file="VP.RData")
 
 str(VP)
 
-pdf("plots/varpartOcc.pdf",height=5,width=60)
-plotVariancePartitioning(m, VP = VP)
+pdf("plots/varpartOcc.pdf", height=5, width=60)
+plotVariancePartitioning(m, VP=VP)
 dev.off()
 
 ### - Plot association networks ordered by taxonomy - ####
@@ -140,53 +141,53 @@ OmegaCorOcc = computeAssociations(m)
 
 load(file="OmegaCorOcc.RData")
 
-tree=m$phyloTree
-tree=untangle(tree,"read.tree")
+tree = m$phyloTree
+tree = untangle(tree, "read.tree")
 
-orderC=m$C[tree$tip.label,tree$tip.label]
+orderC = m$C[tree$tip.label, tree$tip.label]
 orderC[1:5,1:5]
-orderOmega=OmegaCorOcc[[1]]$mean[tree$tip.label,tree$tip.label]
+orderOmega = OmegaCorOcc[[1]]$mean[tree$tip.label, tree$tip.label]
 orderOmega[1:5,1:5]
-cor(c(orderC),c(orderOmega)) #0.032
+cor(c(orderC), c(orderOmega)) #0.032
 
-plotOrderOcc=match(tree$tip.label,colnames(OmegaCorOcc[[1]]$mean))
+plotOrderOcc = match(tree$tip.label, colnames(OmegaCorOcc[[1]]$mean))
 
-pdf("plots/CorPhylo.pdf",width=12,height=3)
+pdf("plots/CorPhylo.pdf", width=12, height=3)
 par(mfrow=c(1,4))
 supportLevel = 0.75
 
 toPlot = m$C
-corrplot(toPlot[plotOrderOcc,plotOrderOcc], type="lower",tl.pos="n",method = "color",main="Taxonomic correlation", 
+corrplot(toPlot[plotOrderOcc,plotOrderOcc], type="lower", tl.pos="n", method = "color", main="Taxonomic correlation", 
          col=colorRampPalette(c("blue","white","red"))(200), mar=c(0,0,1,0))
 
 toPlot = ((OmegaCorOcc[[1]]$support>supportLevel) + (OmegaCorOcc[[1]]$support<(1-supportLevel))>0)*OmegaCorOcc[[1]]$mean
-corrplot(toPlot[plotOrderOcc,plotOrderOcc], type="lower",tl.pos="n",method = "color",main="Historical occurrence", 
+corrplot(toPlot[plotOrderOcc,plotOrderOcc], type="lower", tl.pos="n", method = "color", main="Historical occurrence", 
          col=colorRampPalette(c("blue","white","red"))(200), mar=c(0,0,1,0))
 
 toPlot = ((OmegaCorCol[[1]]$support>supportLevel) + (OmegaCorCol[[1]]$support<(1-supportLevel))>0)*OmegaCorCol[[1]]$mean
-corrplot(toPlot[plotOrderCol,plotOrderCol], type="lower",tl.pos="n",method = "color",main="Colonisation probability", 
+corrplot(toPlot[plotOrderCol,plotOrderCol], type="lower", tl.pos="n", method = "color", main="Colonisation probability", 
          col=colorRampPalette(c("blue","white","red"))(200), mar=c(0,0,1,0))
 
 toPlot = ((OmegaCorExt[[1]]$support>supportLevel) + (OmegaCorExt[[1]]$support<(1-supportLevel))>0)*OmegaCorExt[[1]]$mean
-corrplot(toPlot[plotOrderExt,plotOrderExt], type="lower",tl.pos="n",method = "color",main="Extinction probability", 
+corrplot(toPlot[plotOrderExt,plotOrderExt], type="lower", tl.pos="n", method = "color", main="Extinction probability", 
          col=colorRampPalette(c("blue","white","red"))(200), mar=c(0,0,1,0))
 
 dev.off()
 
 #### - Cross-validation - ####
-a=Sys.time()
-partition=createPartition(m, nfolds=2, column=1)
+a = Sys.time()
+partition = createPartition(m, nfolds=2, column=1)
 predY_CV2 = computePredictedValues(m, partition=partition, updater=list(GammaEta=FALSE))
-MF_CV2=evaluateModelFit(m, predY_CV2)
+MF_CV2 = evaluateModelFit(m, predY_CV2)
 Sys.time()-a
 
-save(MF_CV2,file="MF_CV2.Rdata") #2fold
-save(predY_CV2,file="crossvalY.Rdata") #2fold
+save(MF_CV2, file="MF_CV2.Rdata") #2fold
+save(predY_CV2, file="crossvalY.Rdata") #2fold
 
 load("crossvalY.Rdata") #5fold
 
 R2 = MF_CV2$TjurR2
 AUC = MF_CV2$AUC
 
-mean(R2,na.rm=T)
-mean(AUC,na.rm=T)
+mean(R2, na.rm=T)
+mean(AUC, na.rm=T)
