@@ -16,6 +16,8 @@ library(ggplot2)
 
 #### - Load the fitted model - ####
 setwd("D:/HelsinkiData23102019/archipelago/hmsc/Rcode/colext_nospace")
+setwd("C:/data/archipelago/hmsc/Rcode/colext_nospace")
+
 load("model.RData")
 
 #### - Evaluate mixing - ####
@@ -369,8 +371,8 @@ oldold = c(oldpold,-oldnold)
 dat = data.frame(corr=oldold, group=c(rep("old+old",length(oldpold)), rep("old-old",length(oldnold))))
 dat$group = relevel(dat$group, ref="old+old")
 boxplot(dat$corr~dat$group, varwidth=T, col=c("firebrick","navyblue"), at=c(1,2),
-        xlim=c(0,17), xaxt="n", xlab="", ylab="| r |", las=1, cex=0, main=expression(paste("(a) Residual correlations")))
-
+        xlim=c(0,17), xaxt="n", xlab="", ylab="", las=1, cex=0, main=expression(paste("(a) Residual correlations")))
+mtext("| r |", 2, line=2.5, cex=1)
 # Colonisation
 par(new=T)
 colcol = c(colpcol,-colncol)
@@ -582,8 +584,9 @@ plotpred = function(predY=NA , Gradient =NA , xlabel=NA, ylabel=NA){
   extCond = qpredext*qpredhist[c(2,2,2),]
 
   xx = Gradient$XDataNew[,1]
-  plot(xx, qpredhist[2,], col="white", ylim=c(0,.75), bty="l", las=1, xlab="", ylab=ylabel)
+  plot(xx, qpredhist[2,], col="white", ylim=c(0,.75), bty="l", las=1, xlab="", ylab="")
   mtext(xlabel, 1, line=2.5, cex=.8)
+  mtext(ylabel, 2, line=2.5, cex=.8)
   polygon(c(xx, rev(xx)), c(qpredhist[1, ], rev(qpredhist[3, ])), 
         col = "grey75", border = FALSE)
   lines(xx, qpredhist[2, ], lwd = 2)

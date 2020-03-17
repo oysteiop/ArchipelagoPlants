@@ -238,7 +238,8 @@ ses = apply(mat, 1, sd)
 
 # rmsd
 plot(1:11, means, ylim=c(-0.01,0.04), pch=c(1,16,17,15,16,17,15,17,15,17,15),
-     xaxt="n", ylab="Root mean square deviation", xlab="", main=expression(paste("(b) Influence on model predictions")))
+     xaxt="n", ylab="", xlab="", main=expression(paste("(b) Influence on model predictions")))
+mtext(2, text="Root mean square deviation", line=2.5, cex=1)
 segments(1:11, means-ses, 1:11, means+ses)
 abline(h=0, lty=2)
 axis(1, c(1,3,6,8.5,10.5), labels=F, xlab="")
@@ -270,7 +271,8 @@ means = apply(mat, 1, mean, na.rm=T)
 ses = apply(mat, 1, sd, na.rm=T)/sqrt(ncol(mat))
 
 plot(1:11, means, ylim=c(0.2,.35), xlab="", xaxt="n", pch=c(1,16,17,15,16,17,15,17,15,17,15), las=1,
-     main=expression(paste("(c) Influence on Tjur ", r^2)), ylab=expression(paste("Tjur ",r^2)))
+     main=expression(paste("(c) Influence on Tjur ", r^2)), ylab="")
+mtext(2, text=expression(paste("Tjur ",r^2)), line=2.5, cex=1)
 abline(h=means[1])
 segments(1:11, means-ses, 1:11, means+ses)
 axis(1, c(1,3,6,8.5,10.5), labels=F, xlab="")
